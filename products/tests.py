@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -60,6 +61,7 @@ class ProductCreateTest(APITestCase):
     url = reverse('product-list-create')
 
     def setUp(self):
+        cache.clear()
         self.seller = make_user()
         self.token = get_token(self.client, 'seller@test.com')
 
@@ -99,6 +101,7 @@ class ProductCreateTest(APITestCase):
 
 class ProductDetailTest(APITestCase):
     def setUp(self):
+        cache.clear()
         self.seller = make_user()
         self.other = make_user(email='other@test.com', nickname='타인')
         self.product = make_product(self.seller)
@@ -140,6 +143,7 @@ class ProductDetailTest(APITestCase):
 
 class ProductStatusTest(APITestCase):
     def setUp(self):
+        cache.clear()
         self.seller = make_user()
         self.other = make_user(email='other@test.com', nickname='타인')
         self.product = make_product(self.seller)
@@ -166,6 +170,7 @@ class MyProductListTest(APITestCase):
     url = reverse('my-products')
 
     def setUp(self):
+        cache.clear()
         self.seller = make_user()
         self.other = make_user(email='other@test.com', nickname='타인')
         make_product(self.seller, title='내 상품 1')

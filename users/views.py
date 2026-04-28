@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate, get_user_model
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .serializers import RegisterSerializer, TokenResponseSerializer, UserSerializer
@@ -21,6 +22,8 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'  # settings: 5회/분
 
     def post(self, request):
         email = request.data.get('email')

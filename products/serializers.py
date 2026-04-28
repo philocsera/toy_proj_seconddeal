@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from config.validators import validate_image_file
 from .models import Product
 
 
@@ -33,6 +34,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         if len(value.strip()) < 2:
             raise serializers.ValidationError('제목은 2자 이상이어야 합니다.')
         return value.strip()
+
+    def validate_image(self, value):
+        if value:
+            return validate_image_file(value)
+        return value
 
     def create(self, validated_data):
         validated_data['seller'] = self.context['request'].user

@@ -1,3 +1,5 @@
+import logging
+
 from django.utils import timezone
 from django.views.generic import TemplateView
 from rest_framework import status
@@ -8,6 +10,8 @@ from rest_framework.views import APIView
 from orders.models import Order
 from .models import Payment
 from .portone import cancel_payment, fetch_payment
+
+logger = logging.getLogger(__name__)
 
 
 class CheckoutPageView(TemplateView):
@@ -43,14 +47,16 @@ class PaymentVerifyView(APIView):
         try:
             paid_info = fetch_payment(imp_uid)
         except Exception as e:
-            return Response({'detail': f'PortOne API 오류: {e}'}, status=status.HTTP_502_BAD_GATEWAY)
+            logger.error('PortOne fetch_payment 오류 | imp_uid=%s | %s', imp_uid, e)
+            return Response({'detail': '결제 정보 조회 중 오류가 발생했습니다.'}, status=status.HTTP_502_BAD_GATEWAY)
 
         # 금액 검증: 서버가 알고 있는 주문 금액 vs PortOne에서 실제 승인된 금액
         if paid_info['amount'] != order.total_price:
-            return Response(
-                {'detail': f'결제 금액 불일치 (주문: {order.total_price}, 실제: {paid_info["amount"]})'},
-                status=status.HTTP_400_BAD_REQUEST,
+            logger.warning(
+                '결제 금액 불일치 | merchant_uid=%s | 주문=%s | 실제=%s',
+                merchant_uid, order.total_price, paid_info['amount'],
             )
+            return Response({'detail': '결제 금액이 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if paid_info['status'] != 'paid':
             return Response({'detail': f'결제 상태 이상: {paid_info["status"]}'}, status=status.HTTP_400_BAD_REQUEST)
@@ -98,7 +104,8 @@ class PaymentCancelView(APIView):
         try:
             cancel_payment(payment.imp_uid, reason)
         except Exception as e:
-            return Response({'detail': f'취소 실패: {e}'}, status=status.HTTP_502_BAD_GATEWAY)
+            logger.error('PortOne cancel_payment 오류 | imp_uid=%s | %s', payment.imp_uid, e)
+            return Response({'detail': '결제 취소 중 오류가 발생했습니다.'}, status=status.HTTP_502_BAD_GATEWAY)
 
         order.status = Order.Status.CANCELLED
         order.save(update_fields=['status'])

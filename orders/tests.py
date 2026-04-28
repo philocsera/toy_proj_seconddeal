@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -33,6 +34,7 @@ class OrderCreateTest(APITestCase):
     url = reverse('order-create')
 
     def setUp(self):
+        cache.clear()
         self.seller = make_user(email='seller@test.com', nickname='판매자')
         self.buyer = make_user()
         self.product = make_product(self.seller)
@@ -82,6 +84,7 @@ class MyOrderListTest(APITestCase):
     url = reverse('my-orders')
 
     def setUp(self):
+        cache.clear()
         self.seller = make_user(email='seller@test.com', nickname='판매자')
         self.buyer1 = make_user()
         self.buyer2 = make_user(email='buyer2@test.com', nickname='구매자2')

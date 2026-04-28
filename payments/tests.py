@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -65,6 +66,7 @@ class CheckoutPageTest(APITestCase):
 
 class PaymentVerifyTest(APITestCase):
     def setUp(self):
+        cache.clear()
         self.buyer = make_user()
         self.token = get_token(self.client, 'buyer@test.com')
         self.order = make_pending_order(self.buyer, price=10000)
@@ -98,7 +100,9 @@ class PaymentVerifyTest(APITestCase):
         # PortOne 실제 금액(1000) ≠ 주문 금액(10000) → 위변조 감지
         resp = self._post({'imp_uid': 'imp_tamper', 'merchant_uid': 'test_merchant_uid'})
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('불일치', resp.data['detail'])
+        # 내부 금액 정보를 노출하지 않는지 확인
+        self.assertNotIn('10000', resp.data['detail'])
+        self.assertNotIn('1000', resp.data['detail'])
 
     @patch('payments.views.fetch_payment', return_value={'amount': 10000, 'status': 'ready'})
     def test_payment_status_not_paid(self, mock_fetch):
@@ -125,10 +129,13 @@ class PaymentVerifyTest(APITestCase):
     def test_portone_api_error(self, mock_fetch):
         resp = self._post({'imp_uid': 'imp_err', 'merchant_uid': 'test_merchant_uid'})
         self.assertEqual(resp.status_code, status.HTTP_502_BAD_GATEWAY)
+        # 내부 예외 메시지가 응답에 노출되지 않아야 한다
+        self.assertNotIn('PortOne 연결 실패', resp.data.get('detail', ''))
 
 
 class PaymentCancelTest(APITestCase):
     def setUp(self):
+        cache.clear()
         self.buyer = make_user()
         self.token = get_token(self.client, 'buyer@test.com')
 
@@ -163,6 +170,8 @@ class PaymentCancelTest(APITestCase):
         order = make_paid_order(self.buyer)
         resp = self._post({'order_id': order.pk, 'reason': '변심'})
         self.assertEqual(resp.status_code, status.HTTP_502_BAD_GATEWAY)
+        # 내부 예외 메시지가 응답에 노출되지 않아야 한다
+        self.assertNotIn('취소 API 오류', resp.data.get('detail', ''))
 
     def test_unauthenticated(self):
         resp = self.client.post(CANCEL_URL, {'order_id': 1}, format='json')
