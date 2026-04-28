@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>SecondDeal — 결제</title>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 60px auto; padding: 0 20px; }
+    h2 { color: #333; }
+    label { display: block; margin-top: 12px; font-size: 14px; color: #555; }
+    input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    button { margin-top: 24px; width: 100%; padding: 12px; background: #FEE500; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    #result { margin-top: 20px; padding: 12px; background: #f0f0f0; border-radius: 4px; display: none; white-space: pre-wrap; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h2>결제 테스트</h2>
+  <p>PortOne 테스트 결제창 연동 예시입니다.</p>
+
+  <label>상품명</label>
+  <input id="productName" value="맥북 프로 14인치" />
+
+  <label>결제 금액 (원)</label>
+  <input id="amount" type="number" value="100" />
+
+  <label>주문 번호 (merchant_uid)</label>
+  <input id="merchantUid" value="" placeholder="서버에서 발급된 merchant_uid 입력" />
+
+  <label>구매자 이름</label>
+  <input id="buyerName" value="테스터" />
+
+  <label>구매자 이메일</label>
+  <input id="buyerEmail" value="test@example.com" />
+
+  <label>JWT Access Token (로그인 후 발급)</label>
+  <input id="accessToken" placeholder="eyJhbGci..." />
+
+  <button onclick="requestPay()">카드 결제하기</button>
+  <div id="result"></div>
+
+  <!-- PortOne SDK -->
+  <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+  <script>
+    // 실제 사용 시 IMP.init('imp코드') 에 본인의 가맹점 식별코드를 입력
+    IMP.init('imp00000000');
+
+    function requestPay() {
+      const merchantUid = document.getElementById('merchantUid').value;
+      const amount = parseInt(document.getElementById('amount').value);
+      const accessToken = document.getElementById('accessToken').value;
+
+      IMP.request_pay({
+        pg: 'html5_inicis.INIpayTest',   // 테스트 PG
+        pay_method: 'card',
+        merchant_uid: merchantUid,
+        name: document.getElementById('productName').value,
+        amount: amount,
+        buyer_name: document.getElementById('buyerName').value,
+        buyer_email: document.getElementById('buyerEmail').value,
+      }, async function(rsp) {
+        const resultEl = document.getElementById('result');
+        resultEl.style.display = 'block';
+
+        if (rsp.success) {
+          // 결제 성공 → 서버에 검증 요청
+          const resp = await fetch('/api/payments/verify/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              imp_uid: rsp.imp_uid,
+              merchant_uid: rsp.merchant_uid,
+            }),
+          });
+          const data = await resp.json();
+          resultEl.textContent = resp.ok
+            ? '결제 및 검증 완료\n' + JSON.stringify(data, null, 2)
+            : '검증 실패\n' + JSON.stringify(data, null, 2);
+        } else {
+          resultEl.textContent = '결제 실패: ' + rsp.error_msg;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

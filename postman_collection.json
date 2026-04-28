@@ -1,0 +1,240 @@
+{
+  "info": {
+    "name": "SecondDeal API",
+    "description": "Django 기반 중고마켓 SecondDeal API 컬렉션",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "access_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "회원가입",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/register/",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"user@example.com\", \"nickname\": \"홍길동\", \"password\": \"test1234\"}"
+            }
+          }
+        },
+        {
+          "name": "로그인",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "pm.collectionVariables.set('access_token', json.access);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/login/",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"user@example.com\", \"password\": \"test1234\"}"
+            }
+          }
+        },
+        {
+          "name": "내 정보",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/auth/me/",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "카카오 로그인",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/kakao/",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\": \"<카카오_인가코드>\"}"
+            }
+          }
+        },
+        {
+          "name": "토큰 갱신",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/auth/token/refresh/",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refresh\": \"<refresh_token>\"}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "상품 목록",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/products/?q=맥북&category=electronics",
+              "query": [
+                { "key": "q", "value": "맥북", "description": "키워드 검색" },
+                { "key": "category", "value": "electronics", "description": "electronics|fashion|book|sports|etc" },
+                { "key": "status", "value": "on_sale", "description": "on_sale|reserved|sold" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "상품 등록",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/products/",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"맥북 프로 14인치\", \"description\": \"2023년 구매\", \"price\": 1800000, \"category\": \"electronics\"}"
+            }
+          }
+        },
+        {
+          "name": "상품 상세",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/products/1/"
+          }
+        },
+        {
+          "name": "상품 수정",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/products/1/",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"맥북 프로 14인치 (가격 인하)\", \"description\": \"급매\", \"price\": 1600000, \"category\": \"electronics\"}"
+            }
+          }
+        },
+        {
+          "name": "상품 상태 변경",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/products/1/status/",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"reserved\"}"
+            }
+          }
+        },
+        {
+          "name": "내 상품 목록",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/products/mine/",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "상품 삭제",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/products/1/",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "주문 생성",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/orders/",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"product_id\": 1}"
+            }
+          }
+        },
+        {
+          "name": "구매 내역",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/orders/mine/",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "결제창 페이지",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/payments/checkout/"
+          }
+        },
+        {
+          "name": "결제 검증",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/payments/verify/",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"imp_uid\": \"imp_123456789\", \"merchant_uid\": \"order_abc123\"}"
+            }
+          }
+        },
+        {
+          "name": "결제 취소",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/payments/cancel/",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"order_id\": 1, \"reason\": \"단순 변심\"}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

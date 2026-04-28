@@ -22,6 +22,18 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         model = Product
         fields = ('title', 'description', 'price', 'category', 'image')
 
+    def validate_price(self, value):
+        if value < 100:
+            raise serializers.ValidationError('가격은 100원 이상이어야 합니다.')
+        if value > 100_000_000:
+            raise serializers.ValidationError('가격은 1억원을 초과할 수 없습니다.')
+        return value
+
+    def validate_title(self, value):
+        if len(value.strip()) < 2:
+            raise serializers.ValidationError('제목은 2자 이상이어야 합니다.')
+        return value.strip()
+
     def create(self, validated_data):
         validated_data['seller'] = self.context['request'].user
         return super().create(validated_data)
