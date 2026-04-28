@@ -199,9 +199,47 @@ bash deploy/migrate_db.sh <B_IP> <B_PEM>
 
 ---
 
+## 테스트 (Week 5)
+
+전체 API에 대한 자동화 테스트를 작성하고 **61개 테스트 전체 통과**를 확인했다.  
+상세 내용: [`report/week5.md`](report/week5.md)
+
+| 앱 | 테스트 클래스 | 테스트 수 |
+|---|---|---|
+| users | RegisterTest, LoginTest, MeTest, TokenRefreshTest, KakaoLoginTest | 16개 |
+| products | ProductListTest, ProductCreateTest, ProductDetailTest, ProductStatusTest, MyProductListTest | 20개 |
+| orders | OrderCreateTest, MyOrderListTest | 10개 |
+| payments | CheckoutPageTest, PaymentVerifyTest, PaymentCancelTest | 15개 |
+
+- 외부 API(카카오 OAuth2, PortOne)는 `unittest.mock.patch`로 모킹해 네트워크 없이 테스트
+- 성공 케이스 외 401 / 403 / 404 / 400 / 502 등 경계 조건 전부 커버
+- `refresh_from_db()`로 DB 상태 변화(주문 상태, 상품 상태)를 직접 검증
+- 테스트 과정에서 allauth backend의 `username` 필드 충돌 버그를 발견·수정 (미발견 시 운영 환경 500 에러 유발 가능)
+
+---
+
+## 보안 (Week 6)
+
+7가지 취약점을 분석·보완하고 보안 테스트 6개를 추가해 **67개 전체 통과**를 확인했다.  
+상세 내용: [`report/week6.md`](report/week6.md)
+
+| 분류 | 취약점 | 보완 |
+|---|---|---|
+| 정보 노출 | 결제 오류·금액 상세가 응답에 포함 | 서버 로그만 기록, 클라이언트에 제네릭 메시지 반환 |
+| 정보 노출 | 500 에러 내부 스택 노출 가능 | 커스텀 예외 핸들러 fallback 추가 |
+| 인증 | 로그인 브루트포스 무제한 허용 | `ScopedRateThrottle` 5회/분 적용 |
+| 인증 | 약한 비밀번호 허용 | Django `AUTH_PASSWORD_VALIDATORS` 연동 (최소 8자, 흔한 비밀번호·숫자전용 차단) |
+| 파일 업로드 | 확장자·크기 미검증 | 확장자 화이트리스트(jpg/png/webp) + 5MB 제한 공통 유틸리티 |
+| 설정 | 기본 `SECRET_KEY`로 운영 기동 허용 | 기동 시 `sys.exit()` 가드 추가 |
+| 설정 | HTTPS·보안 헤더 미설정 | 운영 환경 조건부 HSTS·SSL redirect·보안 쿠키 설정 |
+
+---
+
 ## 진행 상황
 
 - [x] 1주차: Django 세팅, DB 설계, 인증·상품 CRUD API
 - [x] 2주차: 카카오 소셜 로그인, 주문·결제 연동 (PortOne 위변조 검증)
 - [x] 3주차: EC2 배포 스크립트, Nginx·Gunicorn 구성, 서버 이전 스크립트
 - [x] 4주차: 에러 핸들링 통일, 입력값 검증 보완, Postman 컬렉션, 전체 회고
+- [x] 5주차: 전체 API 자동화 테스트 61개 작성 및 통과
+- [x] 6주차: 보안 취약점 7건 분석·보완, 보안 테스트 6개 추가 (67개 전체 통과)
