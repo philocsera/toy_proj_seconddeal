@@ -35,8 +35,12 @@ SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
 ]
+
+# allauth: 소셜 계정 모델 관리용으로만 사용 (로그인 플로우는 커스텀 뷰로 처리)
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 
 KAKAO_CLIENT_ID = os.getenv('KAKAO_CLIENT_ID', '')
 KAKAO_REDIRECT_URI = os.getenv('KAKAO_REDIRECT_URI', 'http://localhost:8000/api/auth/kakao/callback/')
