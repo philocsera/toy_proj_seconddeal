@@ -1,0 +1,7 @@
+Django==4.2
+djangorestframework==3.17.1
+djangorestframework_simplejwt==5.5.1
+python-dotenv==1.2.2
+Pillow==12.2.0
+# MySQL 연결 시 추가: mysqlclient==2.2.x
+# 2주차 추가 예정: django-allauth, requests
